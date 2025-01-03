@@ -1,0 +1,107 @@
+MODEL:
+  META_ARCHITECTURE: "PanopticFCN"
+  # WEIGHTS: "detectron2://ImageNetPretrained/MSRA/R-50.pkl"
+  WEIGHTS: "/media/tuan/Daten/project/pretrained/fpn/R-50.pkl"
+  # WEIGHTS: "/media/tuan/Daten/project/path_save_model/panoptic_fcn/model_0063999.pth"
+  # WEIGHTS: "/media/tuan/Daten/project/path_save_model/panoptic_fcn/model_0009999.pth"
+  # WEIGHTS: "/media/tuan/Daten/project/path_save_model/panoptic_fcn/model_final.pth"
+  # WEIGHTS: "/media/tuan/Daten/project/pretrained/fpn/model_final.pth"
+
+  MASK_ON: True
+  PIXEL_MEAN: [123.675, 116.28, 103.53]
+  PIXEL_STD: [1.0, 1.0, 1.0]
+  RESNETS:
+    DEPTH: 50
+    OUT_FEATURES: ["res2", "res3", "res4", "res5"]
+    DEPTH_OUT_FEATURES: ["depth_res2", "depth_res3", "depth_res4", "depth_res5"]
+  FPN:
+    IN_FEATURES: ["res2", "res3", "res4", "res5"]
+    DEPTH_IN_FEATURES: ["depth_res2", "depth_res3", "depth_res4", "depth_res5"]
+  LOSS_WEIGHT:
+    SEGMENT: 4.0
+  POSITION_HEAD:
+    THING:
+      NUM_CLASSES: 8
+      THRES: 0.01
+      TOP_NUM: 200
+    STUFF:
+      THRES: 0.1
+      NUM_CLASSES: 19
+      WITH_THING: False  # Check that this is not a problem
+      ALL_CLASSES: True
+  SEM_SEG_HEAD:
+    NUM_CLASSES: 19
+  KERNEL_HEAD:
+    INSTANCE_SCALES: ((1, 128), (64, 256), (128, 512), (256, 1024), (512, 2048),)
+  TENSOR_DIM: 150  # Adapted because max inst. per img > 100
+  INFERENCE:
+    INST_THRES: 0.5
+    SIMILAR_THRES: 0.97
+    COMBINE:
+      STUFF_AREA_LIMIT: 2048
+  FREEZE_COLOR_BACKBONE: True
+  DEPTH_MODALITY:
+    SHARED_WEIGHT: False
+    ENABLED: True
+    NORMALIZATION: 3 # 1 - max_divided, 2 - [0-255] normalization, 3 - Global normalization based on training set, needs DEPTH_MEAN, DETPH_STD
+    DEPTH_MEAN: 27.567
+    DEPTH_MAX: 503.862
+    DEPTH_STD: 45.659
+    FUSION_TYPE: "concat" # For late fusion - mean, concat, sa_gate. For early fusion - early. (Maybe) for depth-aware cnn operation: depthaware, 
+
+DATASETS:
+  NAME: "Cityscapes"
+  TRAIN: ("my_cityscapes_fine_panoptic_val2",)
+  TEST: ("my_cityscapes_fine_panoptic_val2",)
+  # TEST_PANOPTIC: ("my_cityscapes_fine_panoptic_val2",)
+DATALOADER:
+  FILTER_EMPTY_ANNOTATIONS: True
+  NUM_WORKERS: 3
+SOLVER:
+  BASE_LR: 0.00003
+  WEIGHT_DECAY: 1e-4
+  # LR_SCHEDULER_NAME: "WarmupPolyLR"
+  # POLY_LR_POWER: 0.9
+  # WARMUP_ITERS: 1000
+  # WARMUP_FACTOR: 0.001
+  # WARMUP_METHOD: "linear"
+  CLIP_GRADIENTS:
+    ENABLED: True
+    CLIP_VALUE: 15.0
+  IMS_PER_BATCH: 2
+  MAX_ITER: 65000
+  CHECKPOINT_PERIOD: 1000
+
+# This is official input for cityscape, comment because of out of memory
+INPUT:
+  # MIN_SIZE_TRAIN: (512, 768, 1024, 1152, 1216, 1344, 1408, 1536, 1664, 1728, 1856, 1920, 2048)
+  MIN_SIZE_TRAIN: (1024, 1024)
+  MIN_SIZE_TRAIN_SAMPLING: "choice"
+  MIN_SIZE_TEST: 1024
+  # MIN_SIZE_TEST: 768
+  MAX_SIZE_TRAIN: 4096
+  MAX_SIZE_TEST: 2048
+  CROP:
+    MINIMUM_INST_AREA: 1
+    ENABLED: True
+    TYPE: "absolute"
+    SIZE: (512, 1024)
+  MASK_FORMAT: "bitmask"
+
+DATA_DIR: "/media/tuan/Daten/project/dataset/cityscapes/"
+OUTPUT_DIR: "/media/tuan/Daten/project/path_save_model/panoptic_fcn"
+# This is input config from coco dataset, fix out of memory for cityscape training on 2070 super
+# INPUT:
+#   MIN_SIZE_TRAIN: (640, 672, 704, 736, 768, 800)
+#   MIN_SIZE_TRAIN_SAMPLING: "choice"
+#   MIN_SIZE_TEST: 800
+#   MAX_SIZE_TRAIN: 1333
+#   MAX_SIZE_TEST: 1333
+#   CROP:
+#     MINIMUM_INST_AREA: 1
+#     ENABLED: True
+#     TYPE: "absolute"
+#     SIZE: (512, 1024)
+#   MASK_FORMAT: "bitmask"
+VERSION: 2
+

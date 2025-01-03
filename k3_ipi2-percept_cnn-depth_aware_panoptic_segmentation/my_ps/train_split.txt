@@ -1,0 +1,16 @@
+aachen
+bochum
+bremen
+cologne
+darmstadt
+dusseldorf
+erfurt
+hamburg
+hanover
+jena
+krefeld
+monchengladbach
+strasbourg
+stuttgart
+tubingen
+ulm
