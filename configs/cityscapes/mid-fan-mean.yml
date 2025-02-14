@@ -1,0 +1,98 @@
+MODEL:
+  META_ARCHITECTURE: "PanopticFCN"
+  WEIGHTS: "/bigwork/nhgnsar2/my_ps/configs/depth-R-50.pkl"
+  MASK_ON: True
+  PIXEL_MEAN: [123.675, 116.28, 103.53]
+  PIXEL_STD: [1.0, 1.0, 1.0]
+  FUSION_STAGE: "MID_FUSION"
+  RESNETS:
+    DEPTH: 50
+    OUT_FEATURES: ["res2", "res3", "res4", "res5"]
+    DEPTH_OUT_FEATURES: ["res2depth", "res3depth", "res4depth", "res5depth"]
+  FPN:
+    IN_FEATURES: ["res2", "res3", "res4", "res5"]
+    DEPTH_IN_FEATURES: ["res2depth", "res3depth", "res4depth", "res5depth"]
+    TYPE: "FAN"
+  LOSS_WEIGHT:
+    SEGMENT: 4.0
+  POSITION_HEAD:
+    THING:
+      NUM_CLASSES: 8
+      THRES: 0.01
+      TOP_NUM: 200
+    STUFF:
+      THRES: 0.1
+      NUM_CLASSES: 19
+      WITH_THING: False  # Check that this is not a problem
+      ALL_CLASSES: True
+  SEM_SEG_HEAD:
+    NUM_CLASSES: 19
+  KERNEL_HEAD:
+    INSTANCE_SCALES: ((1, 128), (64, 256), (128, 512), (256, 1024), (512, 2048),)
+  TENSOR_DIM: 150  # Adapted because max inst. per img > 100
+  INFERENCE:
+    INST_THRES: 0.5
+    SIMILAR_THRES: 0.97
+    COMBINE:
+      STUFF_AREA_LIMIT: 2048
+  FEATURE_ENCODER: # To-do: Research it
+    CONVS_DIM: 256
+  FREEZE_COLOR_BACKBONE: False
+  DEPTH_MODALITY:
+    SHARED_WEIGHT: False
+    ENABLED: True
+    NORMALIZATION: 3 # 1 - max_divided, 2 - [0-255] normalization, 3 - Global normalization based on training set, needs DEPTH_MEAN, DETPH_STD
+    DEPTH_MEAN: 38.3 # ,28.45 ,29.267
+    DEPTH_MAX: 500.0 #,167.95 ,199.982]
+    DEPTH_STD: 65.34 #,32.84 ,31.502]
+    FUSION_TYPE: "mean" # For late fusion - mean, concat, sagate. For early fusion - early. (Maybe) for depth-aware cnn operation: depthaware, for mid fusion residual_excite 
+    MIN_DEPTH_NOISE_THRESHOLD: 1.0
+    MAX_DEPTH_NOISE_THRESHOLD: 500.0
+
+DATASETS:
+  NAME: "Cityscapes"
+  TRAIN: ("my_cityscapes_fine_panoptic_train_separated",)
+  TEST: ("my_cityscapes_fine_panoptic_val_separated",)
+  # TEST_PANOPTIC: ("my_cityscapes_fine_panoptic_val2",)
+DATALOADER:
+  FILTER_EMPTY_ANNOTATIONS: True
+  NUM_WORKERS: 16
+SOLVER:
+  BASE_LR: 0.02
+  WEIGHT_DECAY: 1e-4
+  LR_SCHEDULER_NAME: "WarmupPolyLR"
+  POLY_LR_POWER: 0.9
+  WARMUP_ITERS: 1000
+  WARMUP_FACTOR: 0.001
+  WARMUP_METHOD: "linear"
+  CLIP_GRADIENTS:
+    ENABLED: True
+    CLIP_VALUE: 5.0
+  IMS_PER_BATCH: 2
+  MAX_ITER: 4000
+  CHECKPOINT_PERIOD: 2000
+  ACCUMULATION_STEPS: 6
+
+# This is official input for cityscape, comment because of out of memory
+INPUT:
+    #MIN_SIZE_TRAIN: (1024, 1024)
+  MIN_SIZE_TRAIN: (512, 2048)
+  MIN_SIZE_TRAIN_SAMPLING: "range"
+  MIN_SIZE_TEST: 1024
+  MAX_SIZE_TRAIN: 4096
+  MAX_SIZE_TEST: 2048
+  CROP:
+    MINIMUM_INST_AREA: 1
+    ENABLED: True
+    TYPE: "absolute"
+    SIZE: (512, 1024)
+  MASK_FORMAT: "bitmask"
+
+# TEST:
+#   EVAL_PERIOD: 10000
+VERSION: 2
+
+
+DATA_DIR: "/bigwork/nhgnsar2/my_ps/data"
+OUTPUT_DIR: "/bigwork/nhgnsar2/output_mean-mid-fan"
+SEED: 9
